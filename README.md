@@ -7,7 +7,9 @@ This is just a simple chip-8 emulator, probably not very different from most of 
 This is quite a simple emulator to write, so I've managed to use only the following links:
 
 <http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/>
+
 <https://en.wikipedia.org/wiki/CHIP-8>
+
 <http://devernay.free.fr/hacks/chip8/C8TECH10.HTM>
 
 ## Build
