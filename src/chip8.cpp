@@ -87,6 +87,123 @@ void Chip8::runStep() {
     }
 
     // Fetch + run instruction
+    opcode = ram[pc] << 8 | ram[pc + 1];
+    printf("OPCODE: %#06x\n", opcode);
+
+    switch(opcode & 0xF000) {
+        case 0x0000: 
+            {
+                switch (opcode & 0x000F) {
+                    case 0x0000: // CLS
+                        for (int i=0; i<32; i++) {
+                            for (int j=0; j<64; j++) {
+                                display[i][j] = 0;
+                            }
+                        }
+                        pc += 2;
+                        break;
+                    case 0x000E: // RET
+                        pc = stack[stack_pointer--];
+                        break;
+                    default:
+                        printf("Undefined OP Code");
+                        exit(1);
+                }
+            }
+            break;
+        
+        case 0x1000: // 1nnn - JP addr
+            pc = opcode & 0x0FFF;
+            break;
+        
+        case 0x2000: // 2nnn - CALL addr
+            stack[stack_pointer] = pc;
+            ++stack_pointer;
+            pc = opcode & 0x0FFF;
+            break;
+        
+        case 0x6000: // 6xkk - LD Vx, byte 
+            {
+                unsigned char register_id = opcode & 0x0F00;
+                V[register_id] = opcode & 0x00FF;
+                pc += 2;
+            }
+            break;
+
+        case 0xA000: // Annn - LD I, addr
+            I = opcode & 0x0FFF;
+            pc += 2;
+            break;
+        
+        case 0xD000: // Dxyn - DRW Vx, Vy, nibble
+        {
+            unsigned short x = V[(opcode & 0x0F00) >> 8];
+            unsigned short y = V[(opcode & 0x00F0) >> 4];
+            unsigned short height = opcode & 0x000F;
+            unsigned short pixel;
+            
+            V[0xF] = 0;
+            for (int yline = 0; yline < height; yline++) {
+                pixel = ram[I + yline];
+                for(int xline = 0; xline < 8; xline++) {
+                    if((pixel & (0x80 >> xline)) != 0) {
+                        if(display[y + yline][x + xline] == 1)
+                            V[0xF] = 1;                                 
+                        display[y + yline][x + xline] ^= 1;
+                    }
+                }
+            }
+            
+            pc += 2;
+        }
+        break;
+        
+        case 0xF000:
+            switch (opcode & 0x00FF) {
+                case 0x0007: // Fx07 - LD Vx, DT
+                    V[(opcode & 0x0F00)>>8] = delay_timer;
+                    pc += 2;
+                    break;
+                
+                case 0x0029: // Fx29 - LD F, Vx
+                {
+                    unsigned char x = V[(opcode & 0x0F00) >> 8];
+                    I = ram[x*4];
+                    pc += 2;
+                }
+                    break;
+                
+                case 0x0033: // Fx33 - LD B, Vx
+                {
+                    unsigned char x = V[(opcode & 0x0F00) >> 8];
+                    ram[I+0] = int(x)/100;
+                    ram[I+1] = (int(x)-int(ram[I+0]))/10;
+                    ram[I+2] = int(x) % 10;
+                    pc += 2;
+                }
+                    break;
+                
+                case 0x0065: // Fx65 - LD Vx, [I]
+                {
+                    unsigned short x = (opcode & 0x0F00) >> 8;
+                    for (int i=0; i<=x; i++) {
+                        V[i] = ram[I+i];
+                    }
+                    pc += 2;
+                }
+                    break;
+                
+                default:
+                    printf("Invalid OP code\n");
+                    exit(1);
+            }
+        
+            break;
+
+        default: 
+            printf("Bad instruction: %#06x\n", opcode & 0xF000);
+            exit(1);
+    }
 
     last_fetch = std::chrono::high_resolution_clock::now();
 }
