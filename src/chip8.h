@@ -23,7 +23,7 @@ typedef struct Chip8 {
     std::chrono::time_point<std::chrono::high_resolution_clock> last_fetch; 
     std::chrono::time_point<std::chrono::high_resolution_clock> last_timer; 
 
-    unsigned short game_max_address;
+    unsigned short game_max_address; // tracks the maximum address used by the loaded game
   
 
     Chip8();

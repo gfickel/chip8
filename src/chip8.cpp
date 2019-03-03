@@ -78,6 +78,8 @@ void Chip8::runStep() {
     auto now = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::micro> ellapsed_fetch = now-last_fetch;
     std::chrono::duration<double, std::micro> ellapsed_timer = now-last_timer;
+    last_timer = now;
+    last_fetch = now;
 
     // update timers
     if ((int)ellapsed_timer.count() >= 1000.0/60.0*1000000) {
@@ -87,13 +89,12 @@ void Chip8::runStep() {
             sound_timer = 0;
             delay_timer = 0;
         }
-        last_timer = now;
     }
 
     // sleep according to the clock
     float time_to_sleep = (1000.0/clock)*1000 - (int)ellapsed_fetch.count()*1000000;
     if (time_to_sleep > 0) {
-        std::this_thread::sleep_for(std::chrono::microseconds(int(time_to_sleep/1000000.0)));
+        std::this_thread::sleep_for(std::chrono::microseconds(int(time_to_sleep)));
     }
 
     // Fetch + run instruction
