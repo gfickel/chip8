@@ -8,12 +8,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
 
 include_directories("third_party/"
 					"third_party/imgui/"
+					"third_party/imgui/examples/"
                     "third_party/gl3w/"
                     )
 
 file(GLOB all_chip8_src
     "src/*.cpp"
-	"third_party/imgui/*.cpp"
+	"third_party/imgui/examples/imgui_impl_glfw.cpp"
+	"third_party/imgui/examples/imgui_impl_opengl3.cpp"
+	"third_party/imgui/imgui.cpp"
+	"third_party/imgui/imgui_draw.cpp"
+	"third_party/imgui/imgui_widgets.cpp"
     "third_party/gl3w/GL/gl3w.c"
 )
 
