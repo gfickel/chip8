@@ -44,6 +44,12 @@ Chip8::Chip8() {
         keys[i] = 0;
     }
 
+    for (int i=0; i<32; i++) {
+        for (int j=0; j<64; j++) {
+            display[i][j] = 0;
+        }
+    }
+
 
     last_fetch = std::chrono::high_resolution_clock::now();
     last_timer = std::chrono::high_resolution_clock::now();
@@ -177,8 +183,21 @@ void Chip8::runStep() {
                     }
                 }
             }
+
+            // for (int i=0; i<32; i++) {
+            //     for (int j=0; j<64; j++) {
+            //         if (display[i][j] > 0) {
+            //             printf("X");
+            //         } else {
+            //             printf(" ");
+            //         }
+            //     }
+            //     printf("\n");
+            // }
+            // printf("\n\n\n\n");
             
             pc += 2;
+            
         }
         break;
         
@@ -192,7 +211,7 @@ void Chip8::runStep() {
                 case 0x0029: // Fx29 - LD F, Vx
                 {
                     unsigned char x = V[(opcode & 0x0F00) >> 8];
-                    I = ram[x*4];
+                    I = x*4;
                     pc += 2;
                 }
                     break;
