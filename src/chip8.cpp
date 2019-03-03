@@ -2,7 +2,14 @@
 
 
 Chip8::Chip8() {
-    clock = 500; 
+    clock  = 500; 
+    opcode = 0;
+    pc     = 0x200;
+    I      = 0;
+    stack_pointer = 0;
+
+    sound_timer = 0;
+    delay_timer = 0;
 
     unsigned char font_aux[80] = { 
       0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -24,16 +31,37 @@ Chip8::Chip8() {
     };
 
     for (int i=0; i<80; i++) {
-        font[i] = font_aux[i];
+        ram[i] = font_aux[i];
     }
 
     for (int i=0; i<4096; i++) {
         ram[i] = 0;
     }
 
+    for (int i=0; i<16; i++) {
+        V[i] = 0;
+    }
+
     last_fetch = std::chrono::high_resolution_clock::now();
     last_timer = std::chrono::high_resolution_clock::now();
 };
+
+
+bool Chip8::loadGame(const char* fileName) {
+    printf("Loading game %s\n", fileName);
+
+    std::ifstream fin(fileName, std::ios::binary|std::ios::ate);
+    std::ifstream::pos_type pos = fin.tellg();
+    int length = pos;
+    fin.seekg(0, std::ios::beg);
+    if (length > 4096-512) {
+        return false;
+    }
+
+    fin.read((char*)&ram[512], length);
+
+    return true;
+}
 
 
 void Chip8::runStep() {
