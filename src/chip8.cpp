@@ -10,6 +10,7 @@ Chip8::Chip8() {
 
     sound_timer = 0;
     delay_timer = 0;
+    game_max_address = 81;
 
     unsigned char font_aux[80] = { 
       0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -30,17 +31,19 @@ Chip8::Chip8() {
       0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
 
-    for (int i=0; i<80; i++) {
-        ram[i] = font_aux[i];
-    }
-
     for (int i=0; i<4096; i++) {
         ram[i] = 0;
     }
 
-    for (int i=0; i<16; i++) {
-        V[i] = 0;
+    for (int i=0; i<80; i++) {
+        ram[i] = font_aux[i];
     }
+
+    for (int i=0; i<16; i++) {
+        V[i]    = 0;
+        keys[i] = 0;
+    }
+
 
     last_fetch = std::chrono::high_resolution_clock::now();
     last_timer = std::chrono::high_resolution_clock::now();
@@ -57,6 +60,7 @@ bool Chip8::loadGame(const char* fileName) {
     if (length > 4096-512) {
         return false;
     }
+    game_max_address = 512+length;
 
     fin.read((char*)&ram[512], length);
 
@@ -88,7 +92,12 @@ void Chip8::runStep() {
 
     // Fetch + run instruction
     opcode = ram[pc] << 8 | ram[pc + 1];
-    printf("OPCODE: %#06x\n", opcode);
+    // printf("============================================\n");
+    // printf("PC: %d\tgame_max_address: %d\n", pc, game_max_address);
+    if (pc >= game_max_address) {
+        exit(1);
+    }
+    // printf("OPCODE: %#06x\n", opcode);
 
     switch(opcode & 0xF000) {
         case 0x0000: 
@@ -103,7 +112,7 @@ void Chip8::runStep() {
                         pc += 2;
                         break;
                     case 0x000E: // RET
-                        pc = stack[stack_pointer--];
+                        pc = stack[--stack_pointer];
                         break;
                     default:
                         printf("Undefined OP Code");
@@ -124,10 +133,25 @@ void Chip8::runStep() {
         
         case 0x6000: // 6xkk - LD Vx, byte 
             {
-                unsigned char register_id = opcode & 0x0F00;
+                unsigned char register_id = (opcode & 0x0F00) >> 8;
                 V[register_id] = opcode & 0x00FF;
                 pc += 2;
             }
+            break;
+        
+        case 0x7000: // 7xkk - ADD Vx, byte 
+            {
+                unsigned char x = (opcode & 0x0F00) >> 8;
+                V[x] += (opcode & 0x00FF);
+                pc += 2;
+            }
+            break;
+
+        case 0x9000: // 9xy0 - SNE Vx, Vy
+            if (V[(opcode&0x0F00) >> 8] != V[(opcode & 0x00F0)>>4]) {
+               pc += 2; 
+            }
+            pc += 2;
             break;
 
         case 0xA000: // Annn - LD I, addr
