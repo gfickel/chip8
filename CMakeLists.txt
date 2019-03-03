@@ -22,7 +22,7 @@ pkg_search_module(GLFW REQUIRED glfw3)
 find_package(OpenGL REQUIRED)
 
 
-add_executable(chip8 ${all__src})8pihc
+add_executable(chip8 ${all_chip8_src})
 
 if(APPLE)
     set(FRAMEWORK_COCOA "-framework Cocoa" CACHE STRING "Cocoa framework for OSX")
