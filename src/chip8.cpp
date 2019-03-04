@@ -101,13 +101,13 @@ void Chip8::runStep() {
 
     // Fetch + run instruction
     opcode = ram[pc] << 8 | ram[pc + 1];
-    printf("============================================\n");
-    printf("PC: %d\tgame_max_address: %d\n", pc, game_max_address);
+    // printf("============================================\n");
+    // printf("PC: %d\tgame_max_address: %d\n", pc, game_max_address);
     if (pc >= game_max_address) {
         printf("Invalid PC address: %d\n", (int)pc);
         exit(1);
     }
-    printf("OPCODE: %#06x\n", opcode);
+    // printf("OPCODE: %#06x\n", opcode);
 
     switch(opcode & 0xF000) {
         case 0x0000: 

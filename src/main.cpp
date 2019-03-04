@@ -31,6 +31,15 @@ void TextureFromMat(unsigned char* buffer, int width, int height) {
 }
 
 
+void inputKeys(Chip8& chip8, ImGuiIO& io, int keyboardKey, int keyId) {
+    if (io.KeysDownDuration[keyboardKey] >= 0.0f) {
+        chip8.keys[keyId] = 1;
+    } else {
+        chip8.keys[keyId] = 0;
+    }
+}
+
+
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         printf("Usage: ./chip8 path/to/game/awesomegame\n");
@@ -143,6 +152,28 @@ int main(int argc, char* argv[]) {
             ImGui::Image((GLuint*)textureID, ImVec2(64*im_scale,32*im_scale));        
             ImGui::End();
         }
+
+        
+        inputKeys(chip8, io, 49, 1);
+        inputKeys(chip8, io, 50, 2);
+        inputKeys(chip8, io, 51, 3);
+        inputKeys(chip8, io, 52, 12);
+        
+        inputKeys(chip8, io, 81, 4);
+        inputKeys(chip8, io, 87, 5);
+        inputKeys(chip8, io, 69, 6);
+        inputKeys(chip8, io, 82, 13);
+        
+        inputKeys(chip8, io, 65, 7);
+        inputKeys(chip8, io, 83, 8);
+        inputKeys(chip8, io, 68, 9);
+        inputKeys(chip8, io, 70, 14);
+        
+        inputKeys(chip8, io, 90, 10);
+        inputKeys(chip8, io, 88, 0);
+        inputKeys(chip8, io, 67, 11);
+        inputKeys(chip8, io, 86, 15);
+
 
         // Rendering
         ImGui::Render();
