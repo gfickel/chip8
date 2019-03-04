@@ -67,5 +67,113 @@ TEST_CASE( "2nnn - CALL addr" ) {
 
     REQUIRE( chip8.stack[0] == old_pc );
     REQUIRE( chip8.pc == address );
-
 }
+
+// Skip next instruction if Vx = kk.
+TEST_CASE( "3xkk - SE Vx, byte" ) {
+    unsigned short x  = 0x000F;
+    unsigned short kk = 0x003E;
+
+    // test Vx == kk
+    prepare_test(0x3000 | (x << 8) | kk);
+    unsigned short old_pc = chip8.pc;
+    chip8.V[x] = (unsigned char)kk;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.pc == old_pc+4 );
+
+
+    // test Vx != kk
+    prepare_test(0x3000 | (x << 8) | kk);
+    old_pc = chip8.pc;
+    chip8.V[x] = (unsigned char)kk-4;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.pc == old_pc+2 );
+}
+
+// Skip next instruction if Vx != kk.
+TEST_CASE( "4xkk - SNE Vx, byte" ) {
+    unsigned short x  = 0x000F;
+    unsigned short kk = 0x003E;
+
+    // test Vx == kk
+    prepare_test(0x4000 | (x << 8) | kk);
+    unsigned short old_pc = chip8.pc;
+    chip8.V[x] = (unsigned char)kk;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.pc == old_pc+2 );
+
+    // test Vx != kk
+    prepare_test(0x4000 | (x << 8) | kk);
+    old_pc = chip8.pc;
+    chip8.V[x] = (unsigned char)kk-4;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.pc == old_pc+4 );
+}
+
+// Set Vx = kk.
+TEST_CASE( "6xkk - LD Vx, byte" ) {
+    unsigned short x  = 0x000B;
+    unsigned short kk = 0x003A;
+
+    // test Vx == kk
+    prepare_test(0x6000 | (x << 8) | kk);
+
+    chip8.runStep();
+
+    REQUIRE( (unsigned short)chip8.V[x] == kk );
+}
+
+// Set Vx = Vx + kk.
+TEST_CASE( "7xkk - ADD Vx, byte" ) {
+    unsigned short x  = 0x0008;
+    unsigned short kk = 0x0005;
+    unsigned char old_vx = 0x06;
+
+    // test Vx += kk
+    prepare_test(0x7000 | (x << 8) | kk);
+    unsigned char old_vf = chip8.V[0xF];
+    chip8.V[x] = old_vx; 
+
+    chip8.runStep();
+
+    // unsigned char + unsigned char == int (thanks, C++...)
+    REQUIRE( chip8.V[x] == (unsigned char)(kk+old_vx) );
+    REQUIRE( chip8.V[0xF] == old_vf );
+
+
+    // test Vx += kk with overflow
+    kk = 0x00FE;
+    prepare_test(0x7000 | (x << 8) | kk);
+    old_vf = chip8.V[0xF];
+    chip8.V[x] = old_vx; 
+
+    chip8.runStep();
+
+    
+    REQUIRE( chip8.V[x] == (unsigned char)(kk+old_vx) );
+    REQUIRE( chip8.V[0xF] == old_vf );
+}
+
+// Set Vx = Vy.
+TEST_CASE( "8xy0 - LD Vx, Vy" ) {
+    unsigned short x  = 0x0003;
+    unsigned short y  = 0x0005;
+    unsigned short vy = 0x0043;
+
+    prepare_test(0x8000 | (x << 8) | (y << 4));
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.V[x] == chip8.V[y] );
+}
+
+
