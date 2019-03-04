@@ -94,7 +94,7 @@ void Chip8::runStep() {
     }
 
     // sleep according to the clock
-    float time_to_sleep = (1000.0/clock)*1000 - ellapsed_fetch.count()*1000000;
+    float time_to_sleep = (1000.0/clock)*1000 - (float)ellapsed_fetch.count();
     if (time_to_sleep > 0) {
         std::this_thread::sleep_for(std::chrono::microseconds(int(time_to_sleep)));
     }
@@ -396,6 +396,4 @@ void Chip8::runStep() {
             printf("Bad instruction: %#06x\n", opcode & 0xF000);
             exit(1);
     }
-
-    last_fetch = std::chrono::high_resolution_clock::now();
 }
