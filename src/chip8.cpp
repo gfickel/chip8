@@ -6,7 +6,8 @@ Chip8::Chip8() {
     opcode = 0;
     pc     = 0x200;
     I      = 0;
-    stack_pointer = 0;
+    stack_pointer   = 0;
+    display_updated = true;
 
     sound_timer = 0;
     delay_timer = 0;
@@ -116,6 +117,7 @@ void Chip8::runStep() {
                                 display[i][j] = 0;
                             }
                         }
+                        display_updated = true;
                         pc += 2;
                         break;
                     case 0x000E: // RET
@@ -184,6 +186,7 @@ void Chip8::runStep() {
                     }
                 }
             }
+            display_updated = true;
 
             // for (int i=0; i<32; i++) {
             //     for (int j=0; j<64; j++) {

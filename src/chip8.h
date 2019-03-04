@@ -19,6 +19,7 @@ typedef struct Chip8 {
 
     unsigned char keys[16];
     unsigned char display[32][64];
+    bool display_updated;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> last_fetch; 
     std::chrono::time_point<std::chrono::high_resolution_clock> last_timer; 

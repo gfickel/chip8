@@ -6,9 +6,27 @@
 #include "GL/gl3w.h"    // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
 #include <GLFW/glfw3.h>
 
+
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+}
+
+GLuint CreateTexture() {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    return textureID;
+}
+
+void TextureFromMat(unsigned char* buffer, int width, int height) {
+    //use fast 4-byte alignment (default anyway) if possible
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    //set length of one complete row in data (doesn't need to equal im.cols)
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, width);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, buffer);
 }
 
 
@@ -18,12 +36,15 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    unsigned char image_buffer[32][64*3];
     Chip8 chip8;
     if (chip8.loadGame(argv[1]) == false)
     {
         printf("Problem loading the provided game: %s\n", argv[1]);
         return 1;
     }
+    float im_scale = 10.0;
+
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -86,6 +107,8 @@ int main(int argc, char* argv[]) {
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    
+    GLuint textureID = CreateTexture(); // Just using one texture. Avoiding texture memory leak.
 
     while (!glfwWindowShouldClose(window))
     {
@@ -95,9 +118,21 @@ int main(int argc, char* argv[]) {
         ImGui::NewFrame();
 
         chip8.runStep();
+        if (chip8.display_updated) {
+            for (int i=0; i<32; i++) {
+                for (int j=0; j<64; j++) {
+                    image_buffer[i][j*3+0] = 255*chip8.display[i][j];
+                    image_buffer[i][j*3+1] = 255*chip8.display[i][j];
+                    image_buffer[i][j*3+2] = 255*chip8.display[i][j];
+                }
+            }
+            TextureFromMat(image_buffer[0], 64, 32); 
+            chip8.display_updated = false;
+        }
         
         {
             ImGui::Begin("Chip8");//, NULL, ImGuiWindowFlags_MenuBar );   
+            ImGui::Image((GLuint*)textureID, ImVec2(64*im_scale,32*im_scale));        
             ImGui::End();
         }
 
