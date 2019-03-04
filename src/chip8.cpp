@@ -157,6 +157,13 @@ void Chip8::runStep() {
             pc += 2;
             break;
         
+        case 0x5000: // 5xy0 - SE Vx, Vy
+            if (V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4]) {
+                pc += 2;
+            }
+            pc += 2;
+            break;
+        
         case 0x6000: // 6xkk - LD Vx, byte 
             V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
             pc += 2;
@@ -174,8 +181,18 @@ void Chip8::runStep() {
                     pc += 2;
                     break;
 
+                case 0x0001: // 8xy1 - OR Vx, Vy
+                    V[(opcode & 0x0F00) >> 8] |= V[(opcode & 0x00F0) >> 4];
+                    pc += 2;
+                    break;
+
                 case 0x0002: // 8xy2 - AND Vx, Vy
                     V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] & V[(opcode & 0x00F0) >> 4];
+                    pc += 2;
+                    break;
+                
+                case 0x0003: // 8xy3 - XOR Vx, Vy
+                    V[(opcode & 0x0F00) >> 8] ^= V[(opcode & 0x00F0) >> 4];
                     pc += 2;
                     break;
 
@@ -207,6 +224,12 @@ void Chip8::runStep() {
                 }   
                     break;
 
+                case 0x0006: // 8xy6 - SHR Vx {, Vy}
+                    V[0xF] = V[(opcode & 0x0F00) >> 8] & 0x01;
+                    V[(opcode & 0x0F00) >> 8] /= 2;
+
+                    pc += 2;
+                    break;
 
                 case 0x0007: // 8xy7 - SUBN Vx, Vy
                 {
@@ -220,6 +243,15 @@ void Chip8::runStep() {
                     V[x] = V[y] - V[x];
                     pc += 2;
                 }   
+                    break;
+
+                case 0x000E: // 8xyE - SHL Vx {, Vy}
+                {
+                    unsigned char vx = V[(opcode & 0x0F00) >> 8];
+                    V[0xF] = vx >> 7;
+                    V[(opcode & 0x0F00) >> 8] = vx*2;
+                    pc += 2;
+                }
                     break;
 
                 default:
@@ -243,8 +275,11 @@ void Chip8::runStep() {
             break;
         
         case 0xC000: // Cxkk - RND Vx, byte
-            V[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF) & (unsigned char)(rand()%256);
+        {
+            unsigned short rand_number = rand()%256;
+            V[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF) & rand_number;
             pc += 2;
+        }
             break;
         
         case 0xD000: // Dxyn - DRW Vx, Vy, nibble
@@ -308,17 +343,33 @@ void Chip8::runStep() {
                     pc += 2;
                     break;
                 
+                case 0x001E: // Fx1E - ADD I, Vx
+                    I += V[(opcode & 0x0F00) >> 8];
+                    pc += 2;
+                    break;
+                
                 case 0x0029: // Fx29 - LD F, Vx
-                    I = V[(opcode & 0x0F00) >> 8]*0x5;
+                    I = V[(opcode & 0x0F00) >> 8]*5;
                     pc += 2;
                     break;
                 
                 case 0x0033: // Fx33 - LD B, Vx
                 {
-                    unsigned char x = V[(opcode & 0x0F00) >> 8];
-                    ram[I+0] = int(x)/100;
-                    ram[I+1] = (int(x)-int(ram[I+0]))/10;
-                    ram[I+2] = int(x) % 10;
+                    ram[I]     = V[(opcode & 0x0F00) >> 8] / 100;
+                    ram[I + 1] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
+                    ram[I + 2] = V[(opcode & 0x0F00) >> 8] % 10;
+                    pc += 2;
+                }
+                    break;
+
+                case 0x0055: // Fx55 - LD [I], Vx
+                {
+                    unsigned char x  = ((opcode & 0x0F00) >> 8);
+                    printf("x: %#06x\n", x);
+                    for (int i=0; i <= x; i++) {
+                        printf("Loading: %#06x\n", I);
+                        ram[I+i] = V[i];
+                    }
                     pc += 2;
                 }
                     break;
