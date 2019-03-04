@@ -10,6 +10,7 @@ include_directories("third_party/"
 					"third_party/imgui/"
 					"third_party/imgui/examples/"
                     "third_party/gl3w/"
+                    "third_party/TinySoundFont/"
                     )
 
 file(GLOB all_chip8_src
@@ -20,6 +21,7 @@ file(GLOB all_chip8_src
 	"third_party/imgui/imgui_draw.cpp"
 	"third_party/imgui/imgui_widgets.cpp"
     "third_party/gl3w/GL/gl3w.c"
+    "third_party/TinySoundFont/minisdl_audio.c"
 )
 
 find_package(PkgConfig REQUIRED)
