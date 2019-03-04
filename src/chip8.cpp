@@ -79,13 +79,13 @@ void Chip8::runStep() {
     auto now = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::micro> ellapsed_fetch = now-last_fetch;
     std::chrono::duration<double, std::micro> ellapsed_timer = now-last_timer;
-    last_timer = now;
     last_fetch = now;
 
     // update timers
-    if ((int)ellapsed_timer.count() >= 1000.0/60.0*1000000) {
+    if ((float)ellapsed_timer.count() >= 1000000.0/60.0) {
         sound_timer++;
         delay_timer++;
+        last_timer = now;
         if (sound_timer >= 60) {
             sound_timer = 0;
             delay_timer = 0;
@@ -141,19 +141,13 @@ void Chip8::runStep() {
             break;
         
         case 0x6000: // 6xkk - LD Vx, byte 
-            {
-                unsigned char register_id = (opcode & 0x0F00) >> 8;
-                V[register_id] = opcode & 0x00FF;
-                pc += 2;
-            }
+            V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
+            pc += 2;
             break;
         
         case 0x7000: // 7xkk - ADD Vx, byte 
-            {
-                unsigned char x = (opcode & 0x0F00) >> 8;
-                V[x] += (opcode & 0x00FF);
-                pc += 2;
-            }
+            V[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
+            pc += 2;
             break;
 
         case 0x9000: // 9xy0 - SNE Vx, Vy
@@ -186,22 +180,9 @@ void Chip8::runStep() {
                     }
                 }
             }
-            display_updated = true;
 
-            // for (int i=0; i<32; i++) {
-            //     for (int j=0; j<64; j++) {
-            //         if (display[i][j] > 0) {
-            //             printf("X");
-            //         } else {
-            //             printf(" ");
-            //         }
-            //     }
-            //     printf("\n");
-            // }
-            // printf("\n\n\n\n");
-            
+            display_updated = true;
             pc += 2;
-            
         }
         break;
         
@@ -213,11 +194,8 @@ void Chip8::runStep() {
                     break;
                 
                 case 0x0029: // Fx29 - LD F, Vx
-                {
-                    unsigned char x = V[(opcode & 0x0F00) >> 8];
-                    I = x*4;
+                    I = V[(opcode & 0x0F00) >> 8]*4;
                     pc += 2;
-                }
                     break;
                 
                 case 0x0033: // Fx33 - LD B, Vx
