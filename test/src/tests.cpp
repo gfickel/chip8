@@ -1,35 +1,37 @@
-// 020-TestCase-2.cpp
-
-// main() provided by Catch in file 020-TestCase-1.cpp.
-
 #define CATCH_CONFIG_MAIN
 
+#include "chip8.h"
 #include "catch2/catch.hpp"
 
-int Factorial( int number ) {
-   return number <= 1 ? number : Factorial( number - 1 ) * number;  // fail
-// return number <= 1 ? 1      : Factorial( number - 1 ) * number;  // pass
+
+Chip8 chip8;
+
+void prepare_test(unsigned short op) {
+    chip8.ram[512] = (op & 0xFF00) >> 8;
+    chip8.ram[513] = op & 0x00FF;
+    chip8.pc = 512;
+    chip8.game_max_address = 1024;
 }
 
-TEST_CASE( "2: Factorial of 0 is 1 (fail)", "[multi-file:2]" ) {
-    REQUIRE( Factorial(0) == 1 );
+TEST_CASE( "00E0 - CLS" ) {
+    prepare_test(0x00E0);
+    for (int i=0; i<32; i++) {
+        for (int j=0; j<64; j++) {
+            chip8.display[i][j] = 27; 
+        }
+    }
+
+    chip8.runStep();
+    
+    bool all_blank = true;
+    for (int i=0; i<32; i++) {
+        for (int j=0; j<64; j++) {
+            if (chip8.display[i][j] > 0) {
+                all_blank = false;
+            }
+        }
+    }
+
+    REQUIRE( all_blank == true );
 }
 
-TEST_CASE( "2: Factorials of 1 and higher are computed (pass)", "[multi-file:2]" ) {
-    REQUIRE( Factorial(1) == 1 );
-    REQUIRE( Factorial(2) == 2 );
-    REQUIRE( Factorial(3) == 6 );
-    REQUIRE( Factorial(10) == 3628800 );
-}
-
-// Compile: see 020-TestCase-1.cpp
-
-// Expected compact output (all assertions):
-//
-// prompt> 020-TestCase --reporter compact --success
-// 020-TestCase-2.cpp:13: failed: Factorial(0) == 1 for: 0 == 1
-// 020-TestCase-2.cpp:17: passed: Factorial(1) == 1 for: 1 == 1
-// 020-TestCase-2.cpp:18: passed: Factorial(2) == 2 for: 2 == 2
-// 020-TestCase-2.cpp:19: passed: Factorial(3) == 6 for: 6 == 6
-// 020-TestCase-2.cpp:20: passed: Factorial(10) == 3628800 for: 3628800 (0x375f00) == 3628800 (0x375f00)
-// Failed 1 test case, failed 1 assertion.
