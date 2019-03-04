@@ -124,7 +124,8 @@ int main(int argc, char* argv[]) {
             chip8.runStep();
         } while (old_timer == chip8.delay_timer);
         old_timer = chip8.delay_timer;
-
+        if (old_timer == 2) exit(1);
+        printf("Old: %d\n", (int)old_timer);
         if (chip8.display_updated) {
             for (int i=0; i<32; i++) {
                 for (int j=0; j<64; j++) {

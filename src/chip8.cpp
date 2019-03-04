@@ -54,6 +54,8 @@ Chip8::Chip8() {
 
     last_fetch = std::chrono::high_resolution_clock::now();
     last_timer = std::chrono::high_resolution_clock::now();
+
+    srand(42);
 };
 
 
@@ -100,12 +102,12 @@ void Chip8::runStep() {
 
     // Fetch + run instruction
     opcode = ram[pc] << 8 | ram[pc + 1];
-    // printf("============================================\n");
-    // printf("PC: %d\tgame_max_address: %d\n", pc, game_max_address);
+    printf("============================================\n");
+    printf("PC: %d\tgame_max_address: %d\n", pc, game_max_address);
     if (pc >= game_max_address) {
         exit(1);
     }
-    // printf("OPCODE: %#06x\n", opcode);
+    printf("OPCODE: %#06x\n", opcode);
 
     switch(opcode & 0xF000) {
         case 0x0000: 
@@ -122,6 +124,7 @@ void Chip8::runStep() {
                         break;
                     case 0x000E: // RET
                         pc = stack[--stack_pointer];
+                        pc += 2;
                         break;
                     default:
                         printf("Undefined OP Code");
@@ -139,6 +142,20 @@ void Chip8::runStep() {
             ++stack_pointer;
             pc = opcode & 0x0FFF;
             break;
+
+        case 0x3000: // 3xkk - SE Vx, byte
+            if (V[(opcode & 0x0F00)>>8] == (opcode & 0x00FF)) {
+                pc += 2;
+            }
+            pc += 2;
+            break;
+
+        case 0x4000: // 4xkk - SNE Vx, byte
+            if (V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF)) {
+                pc += 2;
+            }
+            pc += 2;
+            break;
         
         case 0x6000: // 6xkk - LD Vx, byte 
             V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
@@ -150,6 +167,69 @@ void Chip8::runStep() {
             pc += 2;
             break;
 
+        case 0x8000:
+            switch (opcode & 0x000F) {
+                case 0x0000: // 8xy0 - LD Vx, Vy
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4];
+                    pc += 2;
+                    break;
+
+                case 0x0002: // 8xy1 - OR Vx, Vy
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] | V[(opcode & 0x00F0) >> 4];
+                    pc += 2;
+                    break;
+
+                case 0x0004: // 8xy4 - ADD Vx, Vy
+                {
+                    unsigned char x = (opcode & 0x0F00) >> 8;
+                    unsigned char y = (opcode & 0x00F0) >> 4;
+                    if ((int)V[x] + (int)V[y] > 255) {
+                        V[0xF] = 1;
+                    } else {
+                        V[0xF] = 0;
+                    }
+                    V[x] += V[y];
+                    pc += 2;
+                }   
+                    break;
+
+                case 0x0005: // 8xy5 - SUB Vx, Vy
+                {
+                    unsigned char x = (opcode & 0x0F00) >> 8;
+                    unsigned char y = (opcode & 0x00F0) >> 4;
+                    if (V[x] > V[y]) {
+                        V[0xF] = 1;
+                    } else {
+                        V[0xF] = 0;
+                    }
+                    V[x] = V[x] - V[y];
+                    pc += 2;
+                }   
+                    break;
+
+
+                case 0x0007: // 8xy7 - SUBN Vx, Vy
+                {
+                    unsigned char x = (opcode & 0x0F00) >> 8;
+                    unsigned char y = (opcode & 0x00F0) >> 4;
+                    if (V[y] > V[x]) {
+                        V[0xF] = 1;
+                    } else {
+                        V[0xF] = 0;
+                    }
+                    V[x] = V[y] - V[x];
+                    pc += 2;
+                }   
+                    break;
+
+                default:
+                    printf("Operation not implemented\n");
+                    exit(1);
+                    break;
+            }
+
+            break;
+
         case 0x9000: // 9xy0 - SNE Vx, Vy
             if (V[(opcode&0x0F00) >> 8] != V[(opcode & 0x00F0)>>4]) {
                pc += 2; 
@@ -159,6 +239,11 @@ void Chip8::runStep() {
 
         case 0xA000: // Annn - LD I, addr
             I = opcode & 0x0FFF;
+            pc += 2;
+            break;
+        
+        case 0xC000: // Cxkk - RND Vx, byte
+            V[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF) & (unsigned char)(rand()%256);
             pc += 2;
             break;
         
@@ -185,11 +270,41 @@ void Chip8::runStep() {
             pc += 2;
         }
         break;
+
+        case 0xE000: 
+            switch (opcode & 0x00F0) {
+                case 0x0090: // Ex9E - SKP Vx
+                    if (keys[V[(opcode & 0x0F00)>>8]] != 0) {
+                       pc += 2;
+                    }
+                    pc += 2; 
+                    break;
+                case 0x00A0: // ExA1 - SKNP Vx
+                    if (keys[V[(opcode & 0x0F00)>>8]] == 0) {
+                       pc += 2;
+                    }
+                    pc += 2; 
+                    break;
+                default:
+                    printf("Invalid operation\n");
+                    exit(1);
+            }
+            break;
         
         case 0xF000:
             switch (opcode & 0x00FF) {
                 case 0x0007: // Fx07 - LD Vx, DT
                     V[(opcode & 0x0F00)>>8] = delay_timer;
+                    pc += 2;
+                    break;
+                
+                case 0x0015: // Fx15 - LD DT, Vx
+                    delay_timer = V[(opcode & 0x0F00)>>8];
+                    pc += 2;
+                    break;
+
+                case 0x0018: // Fx18 - LD ST, Vx
+                    sound_timer = V[(opcode & 0x0F00) >> 8];
                     pc += 2;
                     break;
                 
