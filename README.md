@@ -6,7 +6,7 @@ This is just a simple chip-8 emulator, probably not very different from most of 
 ## To Do:
 Those are the missing features that I'm most interested in.
 
-* Add a simple sound library: [TinySoundFont](https://github.com/schellingb/TinySoundFont)
+* ~~Add a simple sound library~~: [TinySoundFont](https://github.com/schellingb/TinySoundFont)
 * Add controller support (should be easy with [Dear ImGui](https://github.com/ocornut/imgui)
 * Show current instruction and registers, with a step-by-step
 * Add a memory viewer
