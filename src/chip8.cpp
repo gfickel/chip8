@@ -85,12 +85,11 @@ void Chip8::runStep() {
 
     // update timers
     if ((float)ellapsed_timer.count() >= 1000000.0/60.0) {
-        sound_timer++;
-        delay_timer++;
-        last_timer = now;
-        if (sound_timer >= 60) {
-            sound_timer = 0;
-            delay_timer = 0;
+        if (sound_timer > 0) {
+            sound_timer--;
+        }
+        if (delay_timer > 0) {
+            delay_timer--;
         }
     }
 
@@ -105,6 +104,7 @@ void Chip8::runStep() {
     printf("============================================\n");
     printf("PC: %d\tgame_max_address: %d\n", pc, game_max_address);
     if (pc >= game_max_address) {
+        printf("Invalid PC address: %d\n", (int)pc);
         exit(1);
     }
     printf("OPCODE: %#06x\n", opcode);
@@ -174,8 +174,8 @@ void Chip8::runStep() {
                     pc += 2;
                     break;
 
-                case 0x0002: // 8xy1 - OR Vx, Vy
-                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] | V[(opcode & 0x00F0) >> 4];
+                case 0x0002: // 8xy2 - AND Vx, Vy
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] & V[(opcode & 0x00F0) >> 4];
                     pc += 2;
                     break;
 
@@ -309,7 +309,7 @@ void Chip8::runStep() {
                     break;
                 
                 case 0x0029: // Fx29 - LD F, Vx
-                    I = V[(opcode & 0x0F00) >> 8]*4;
+                    I = V[(opcode & 0x0F00) >> 8]*0x5;
                     pc += 2;
                     break;
                 
@@ -329,6 +329,7 @@ void Chip8::runStep() {
                     for (int i=0; i<=x; i++) {
                         V[i] = ram[I+i];
                     }
+                    // I += ((opcode & 0x0F00) >> 8) + 1;
                     pc += 2;
                 }
                     break;
