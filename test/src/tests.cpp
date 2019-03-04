@@ -10,6 +10,8 @@ void prepare_test(unsigned short op) {
     chip8.pc = 512;
     chip8.game_max_address = 1024;
     chip8.stack_pointer = 0;
+    chip8.I = 0x0000;
+    for (int i=0; i<16; i++) chip8.keys[i] = 0;
 }
 
 // Clear screen
@@ -176,4 +178,200 @@ TEST_CASE( "8xy0 - LD Vx, Vy" ) {
     REQUIRE( chip8.V[x] == chip8.V[y] );
 }
 
+// Set Vx = Vx AND Vy.
+TEST_CASE( "8xy2 - AND Vx, Vy" ) {
+    unsigned short x  = 0x000A;
+    unsigned short y  = 0x0005;
+    unsigned short vx = 0x0003;
+    unsigned short vy = 0x0043;
 
+    prepare_test(0x8002 | (x << 8) | (y << 4));
+    chip8.V[x] = vx;
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.V[x] == (vx & vy) );
+}
+
+// Set Vx = Vx + Vy, set VF = carry.
+TEST_CASE( "8xy4 - ADD Vx, Vy" ) {
+    unsigned short x  = 0x000A;
+    unsigned short y  = 0x0005;
+    unsigned short vx = 0x0003;
+    unsigned short vy = 0x0043;
+
+    // Addition without carry
+    prepare_test(0x8004 | (x << 8) | (y << 4));
+    chip8.V[x] = vx;
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.V[x] == (unsigned char)(vx + vy) );
+    REQUIRE( chip8.V[0xF] == 0 );
+    
+    // Addition with carry
+    vx = 0x00AA;
+    vy = 0x00BB;
+
+    prepare_test(0x8004 | (x << 8) | (y << 4));
+    chip8.V[x] = vx;
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.V[x] == (unsigned char)(vx + vy) );
+    REQUIRE( chip8.V[0xF] == 1 );
+}
+
+// Set Vx = Vx - Vy, set VF = NOT borrow.
+TEST_CASE( "8xy5 - SUB Vx, Vy" ) {
+    unsigned short x  = 0x000C;
+    unsigned short y  = 0x0002;
+    unsigned short vx = 0x0050;
+    unsigned short vy = 0x0004;
+
+    // Subtraction without carry
+    prepare_test(0x8005 | (x << 8) | (y << 4));
+    chip8.V[x] = vx;
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.V[x] == (unsigned char)(vx - vy) );
+    REQUIRE( chip8.V[0xF] == 1 );
+    
+    // Subtraction with carry
+    vx = 0x00AA;
+    vy = 0x00BB;
+
+    prepare_test(0x8005 | (x << 8) | (y << 4));
+    chip8.V[x] = vx;
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.V[x] == (unsigned char)(vx - vy) );
+    REQUIRE( chip8.V[0xF] == 0 );
+}
+
+// Set Vx = Vy - Vx, set VF = NOT borrow.
+TEST_CASE( "8xy7 - SUBN Vx, Vy" ) {
+    unsigned short x  = 0x000C;
+    unsigned short y  = 0x0002;
+    unsigned short vx = 0x0004;
+    unsigned short vy = 0x0064;
+
+    // Subtraction without carry
+    prepare_test(0x8007 | (x << 8) | (y << 4));
+    chip8.V[x] = vx;
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.V[x] == (unsigned char)(vy - vx) );
+    REQUIRE( chip8.V[0xF] == 1 );
+    
+    // Subtraction with carry
+    vx = 0x00CC;
+    vy = 0x0003;
+
+    prepare_test(0x8007 | (x << 8) | (y << 4));
+    chip8.V[x] = vx;
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+
+    REQUIRE( chip8.V[x] == (unsigned char)(vy - vx) );
+    REQUIRE( chip8.V[0xF] == 0 );
+}
+
+// Skip next instruction if Vx != Vy.
+TEST_CASE( "9xy0 - SNE Vx, Vy" ) {
+    unsigned short x  = 0x0003;
+    unsigned short y  = 0x0005;
+    unsigned short vx = 0x00CE;
+    unsigned short vy = 0x00CE;
+
+    prepare_test(0x9000 | (x << 8) | (y << 4));
+    unsigned short old_pc = chip8.pc;
+    chip8.V[x] = vx;
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+    REQUIRE( chip8.pc == old_pc+2 );
+
+    vx = 0x00AA;
+    prepare_test(0x9000 | (x << 8) | (y << 4));
+    old_pc = chip8.pc;
+    chip8.V[x] = vx;
+    chip8.V[y] = vy;
+
+    chip8.runStep();
+    REQUIRE( chip8.pc == old_pc+4 );
+}
+
+// Set I = nnn.
+TEST_CASE( "Annn - LD I, addr" ) {
+    unsigned short nnn = 0x0ABC;
+
+    prepare_test(0xA000 | nnn);
+
+    chip8.runStep();
+
+    REQUIRE( chip8.I == nnn );
+}
+
+// Set Vx = random byte AND kk.
+TEST_CASE( "Cxkk - RND Vx, byte" ) {
+    unsigned short x  = 0x000C;
+    unsigned short vx = 0x000F;
+    unsigned short kk = 0x00BE;
+
+    prepare_test(0xC000 | (x << 8) | kk);
+    chip8.V[x] = vx;
+    srand(42);
+    chip8.runStep();
+    REQUIRE( chip8.V[x] == 0x0006 );
+}
+
+// Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+// Dxyn - DRW Vx, Vy, nibble
+
+
+// Skip next instruction if key with the value of Vx is pressed.
+TEST_CASE( "Ex9E - SKP Vx" ) {
+    unsigned short x = 0x000A;
+
+    prepare_test(0xE09E | (x << 8));
+    unsigned short old_pc = chip8.pc;
+    chip8.V[x] = x;
+    chip8.runStep();
+    REQUIRE( chip8.pc == old_pc+2 );
+    
+    prepare_test(0xE09E | (x << 8));
+    chip8.V[x] = x;
+    chip8.keys[x] = 1;
+    old_pc = chip8.pc;
+    chip8.runStep();
+    REQUIRE( chip8.pc == old_pc+4 );
+}
+
+// Skip next instruction if key with the value of Vx is not pressed.
+TEST_CASE( "ExA1 - SKNP Vx" ) {
+    unsigned short x = 0x000A;
+
+    prepare_test(0xE0A1 | (x << 8));
+    unsigned short old_pc = chip8.pc;
+    chip8.V[x] = x;
+    chip8.runStep();
+    REQUIRE( chip8.pc == old_pc+4 );
+    
+    prepare_test(0xE0A1 | (x << 8));
+    chip8.V[x] = x;
+    chip8.keys[x] = 1;
+    old_pc = chip8.pc;
+    chip8.runStep();
+    REQUIRE( chip8.pc == old_pc+2 );
+}
