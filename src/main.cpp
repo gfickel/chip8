@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <chrono>
 #include "chip8.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -38,7 +39,6 @@ int main(int argc, char* argv[]) {
 
     unsigned char image_buffer[32][64*3];
     Chip8 chip8;
-    int old_timer = 0;
     if (chip8.loadGame(argv[1]) == false)
     {
         printf("Problem loading the provided game: %s\n", argv[1]);
@@ -120,10 +120,12 @@ int main(int argc, char* argv[]) {
 
         // we must run this until 1/60 of the cpu cicles have finished, and since
         // the timers are updated on the same frequency I'm using them to keep track  
+        auto begin = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::micro> ellapsed_time;
         do {
             chip8.runStep();
-        } while (old_timer == chip8.delay_timer);
-        old_timer = chip8.delay_timer;
+            ellapsed_time = std::chrono::high_resolution_clock::now()-begin;
+        } while ((float)ellapsed_time.count() < 1000000/60);
         if (chip8.display_updated) {
             for (int i=0; i<32; i++) {
                 for (int j=0; j<64; j++) {
