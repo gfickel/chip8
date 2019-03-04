@@ -33,6 +33,9 @@
 build/*
 bin/*
 
+test/build/*
+test/bin/*
+
 # Vim
 *.swo
 *.swp
