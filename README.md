@@ -29,7 +29,7 @@ This is quite a simple emulator to write, so I've managed to use only the follow
 For Linux (Ubuntu):
 
 ```sh
-apt-get install libglfw3 libglfw3-dev libcurl4-openssl-dev
+apt-get install libglfw3 libglfw3-dev
 ```
 
 On Mac:
