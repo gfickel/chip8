@@ -227,7 +227,10 @@ int main(int argc, char* argv[]) {
         }
         
         {
-            ImGui::Begin("Chip8");//, NULL, ImGuiWindowFlags_MenuBar );   
+            ImGui::SetNextWindowPos(ImVec2(0,0));
+            ImGui::Begin("Chip8", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar );   
+            auto size = ImGui::GetWindowSize();
+            ImGui::SetNextWindowSize(ImVec2(size.x, size.y));
             ImGui::Image((GLuint*)textureID, ImVec2(64*im_scale,32*im_scale));        
             ImGui::End();
         }
