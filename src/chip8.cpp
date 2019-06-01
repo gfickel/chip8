@@ -101,8 +101,6 @@ void Chip8::runStep() {
 
     // Fetch + run instruction
     opcode = ram[pc] << 8 | ram[pc + 1];
-    // printf("============================================\n");
-    // printf("PC: %d\tgame_max_address: %d\n", pc, game_max_address);
     if (pc >= game_max_address) {
         printf("Invalid PC address: %d\n", (int)pc);
         exit(1);
@@ -367,7 +365,6 @@ void Chip8::runStep() {
                     unsigned char x  = ((opcode & 0x0F00) >> 8);
                     printf("x: %#06x\n", x);
                     for (int i=0; i <= x; i++) {
-                        printf("Loading: %#06x\n", I);
                         ram[I+i] = V[i];
                     }
                     pc += 2;
@@ -382,6 +379,19 @@ void Chip8::runStep() {
                     }
                     // I += ((opcode & 0x0F00) >> 8) + 1;
                     pc += 2;
+                }
+                    break;
+
+                case 0x000A: // LD Vx, K
+                {
+                    for (int i=0; i<16; i++) {
+                        if (keys[i]) {
+                            unsigned char x  = ((opcode & 0x0F00) >> 8);
+                            V[x] = i;
+                            pc += 2;
+                            break;
+                        }
+                    }
                 }
                     break;
                 
